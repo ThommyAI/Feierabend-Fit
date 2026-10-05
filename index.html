@@ -188,6 +188,16 @@ table.mc td.cnt.bad{color:var(--danger)}
 .lvl span{color:var(--muted);white-space:nowrap}
 .opt{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:8px;font-size:15.5px;font-weight:600;cursor:pointer}
 .opt span{color:var(--muted);font-weight:400;font-size:14px}
+/* Foto-Darstellung mit weicher Überblendung */
+.pic{position:relative;overflow:hidden;display:block;background:var(--studio)}
+.pic .zz{position:absolute;inset:0;animation:zoomz var(--d,4.4s) ease-in-out infinite}
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;-webkit-mask-image:radial-gradient(ellipse 76% 82% at 50% 52%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 76% 82% at 50% 52%,#000 62%,transparent 100%)}
+.pic img.b{opacity:0;animation:fb var(--d,4.4s) ease-in-out infinite}
+@keyframes fb{0%,10%{opacity:0}40%,58%{opacity:1}88%,100%{opacity:0}}
+@keyframes zoomz{0%,10%{transform:scale(1)}40%,58%{transform:scale(1.045)}88%,100%{transform:scale(1)}}
+.figbox .pic{aspect-ratio:16/10;border-radius:10px}
+.stage .pic{width:100%;height:100%;background:none}
+@media (prefers-reduced-motion:reduce){.pic .zz,.pic img.b{animation:none!important}}
 /* Player */
 .stage{position:relative;background:var(--studio);border-radius:26px;height:min(50vh,460px);min-height:330px;overflow:hidden;margin:6px 0 10px;padding:58px 10px 118px}
 .stage .fig{width:100%;height:100%;aspect-ratio:auto;background:none}
@@ -629,10 +639,15 @@ function fitVB(e){
  let w=x1-x0,h=y1-y0;const ar=1.6;
  if(w/h<ar){const nw=h*ar;x0-=(nw-w)/2;w=nw}else{const nh=w/ar;y0-=(nh-h);h=nh}
  return e.vb=[x0,y0,w,h]}
-function figSVG(id,cls){const e=EX[id],vb=fitVB(e),mx0=vb[0]+4,mx1=vb[0]+vb[2]-4;
+function figDraw(id,cls){const e=EX[id],vb=fitVB(e),mx0=vb[0]+4,mx1=vb[0]+vb[2]-4;
  const mat=e.nofloor?'':`<ellipse class="shd" cx="${F1((mx0+mx1)/2)}" cy="132" rx="${F1((mx1-mx0)/2*.97)}" ry="3.4"/><polygon class="mat" points="${F1(mx0+18)},116 ${F1(mx1-18)},116 ${F1(mx1)},131 ${F1(mx0)},131"/>`;
  return `<svg class="fig ${cls||''}" viewBox="${vb.map(F1).join(' ')}" data-ex="${id}" role="img" aria-label="Animation: ${e.n}">
  ${mat}${PROPS[e.prop]||''}${layers(e,0).map(([c],i)=>`<path class="${c}" data-i="${i}"/>`).join('')}</svg>`}
+const PHOTOS={"pushup": ["img/pushup-1.webp", "img/pushup-2.webp"]};
+function figSVG(id,cls){const p=PHOTOS[id];if(!p)return figDraw(id,cls);
+ const e=EX[id],d=((e.per||3.4)*1.25).toFixed(2),alt='Übung: '+e.n;
+ if(p.length<2||e.t==='h')return `<div class="pic ${cls||''}" role="img" aria-label="${alt}"><div class="zz" style="animation:none"><img src="${p[0]}" alt=""></div></div>`;
+ return `<div class="pic ${cls||''}" role="img" aria-label="${alt}" style="--d:${d}s"><div class="zz"><img class="a" src="${p[0]}" alt=""><img class="b" src="${p[1]}" alt=""></div></div>`}
 let FIGS=[];
 const IO=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(en=>{const f=en.target._f;if(f)f.vis=en.isIntersecting}),{rootMargin:'120px'}):null;
 function hydrate(root){root.querySelectorAll('svg.fig:not([data-h])').forEach(svg=>{svg.dataset.h=1;
