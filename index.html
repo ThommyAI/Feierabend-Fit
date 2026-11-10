@@ -942,12 +942,12 @@ function startWorkout(w){
  const steps=[];exList(w).forEach((id,ei)=>{for(let s=0;s<SETS;s++)steps.push({id,ei,s})});
  PL={w,steps,i:0,phase:'ready',end:0,paused:false,left:0,t0:Date.now(),confirm:false};
  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(l=>{WL=l}).catch(()=>{})}catch(e){}
- beep(660,.1);setPhase('ready',5)}
+ beep(660,.1);setPhase('ready',10)}
 function startSolo(id,sets,n){
  const steps=[];for(let s=0;s<sets;s++)steps.push({id,ei:0,s,n});
  PL={w:-1,solo:true,steps,i:0,phase:'ready',end:0,paused:false,left:0,t0:Date.now(),confirm:false};
  try{if(navigator.wakeLock)navigator.wakeLock.request('screen').then(l=>{WL=l}).catch(()=>{})}catch(e){}
- beep(660,.1);setPhase('ready',5)}
+ beep(660,.1);setPhase('ready',10)}
 function tgtStep(st){if(!st.n)return tgt(st.id);const per=lvx(st.id)[2];return EX[st.id].t==='h'?st.n+' Sek.':st.n+' Wdh.'+(per?' pro Seite':'')}
 function setPhase(ph,secs){PL.phase=ph;PL.paused=false;PL.end=secs?Date.now()+secs*1000:0;renderPlayer()}
 function beginWork(){const st=PL.steps[PL.i];const e=EX[st.id];PL.ws=Date.now();
