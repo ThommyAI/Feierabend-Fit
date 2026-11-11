@@ -413,6 +413,7 @@ const EX={
 /* ---- Brust ---- */
 pushup:{n:'Liegestütze',p:['Brust'],s:['Trizeps','Schultern'],g:[],t:'r',a:pushUp,b:pushDown,
  cues:['Körper bleibt eine gerade Linie, Po nicht hängen lassen','Ellbogen etwa 45° vom Körper weg','3 Sekunden senken, dann kraftvoll hochdrücken'],
+ vc:['Auf den Knien: Knie auf der Matte, Körper von Knie bis Kopf gerade'],
  lv:[['Knie-Liegestütze',12],['Liegestütze',12],['Liegestütze, 4 s langsam runter',10]]},
 widepush:{n:'Weite Liegestütze',p:['Brust'],s:['Schultern'],g:[],t:'r',a:pushUp,b:pushDown,
  cues:['Hände deutlich breiter als die Schultern','Brust zwischen die Hände absenken','Körper bleibt gespannt'],
@@ -593,6 +594,8 @@ function lvxFor(id,li){const e=EX[id],Lv=LEVELS[li],b=e.lv[Lv.v];let c=b[1]*Lv.r
 /* Eigenes Level pro Übung (S.exLv), sonst das allgemeine Level */
 const exLevel=id=>S.exLv[id]!==undefined?S.exLv[id]:S.level;
 const lvx=id=>lvxFor(id,exLevel(id));
+/* Hinweise inkl. Zusatz für die aktive Variante (vc[Variante]), z. B. Knie-Liegestütze */
+const cuesOf=id=>{const e=EX[id],c=(e.vc||[])[LEVELS[exLevel(id)].v];return c?[c].concat(e.cues):e.cues};
 const vname=id=>lvx(id)[0];
 function tgt(id){const [,c,per]=lvx(id);return EX[id].t==='h'?c+' Sek.':c+' Wdh.'+(per?' pro Seite':'')}
 function nextUndone(){const pm=plan(),assigned=Object.values(pm);const week=DAYS.map((_,i)=>key(dateOfWeekday(i)));
@@ -904,7 +907,7 @@ function renderSheet(){
   body=`<button class="x" data-act="close-sheet" aria-label="Schließen">✕</button><h3>${e.n}</h3>${chips(e)}
    <div class="figbox" style="margin:10px 0">${figSVG(id)}</div>
    ${e.g.length?`<div class="chips" style="margin-top:0">${gearTags(e)}</div>`:'<div class="chips" style="margin-top:0"><span class="tag">Ohne Geräte</span></div>'}
-   <ul class="cues">${e.cues.map(c=>`<li>${c}</li>`).join('')}</ul>${focusHTML(e)}
+   <ul class="cues">${cuesOf(id).map(c=>`<li>${c}</li>`).join('')}</ul>${focusHTML(e)}
    <h2 class="h2" style="font-size:22px;margin-top:16px">Level dieser Übung</h2>
    <p class="sub" style="margin:0 0 10px">${S.exLv[id]!==undefined?'Eigenes Level für diese Übung, gilt in allen Workouts.':'Richtet sich nach deinem Level. Tippe ein anderes an, um nur diese Übung anzupassen.'}</p>
    ${LEVELS.map((L_,i)=>{const c=lvxFor(id,i);return `<button class="lvl lvb${exLevel(id)===i?' on':''}" data-act="exlv" data-v="${i}" aria-pressed="${exLevel(id)===i}"><div><strong>${L_.n}:</strong> ${c[0]}${S.level===i?'<em>Dein Level</em>':''}</div><span>${e.t==='h'?c[1]+' Sek.':c[1]+' Wdh.'+(c[2]?' pro Seite':'')}</span></button>`}).join('')}
@@ -1032,7 +1035,7 @@ function renderPlayer(){
  }else if(PL.phase==='rest'){
   body=`<div class="rest"><div class="lbl2">Pause</div><div class="big" id="tm">${Math.max(0,Math.ceil((PL.end-Date.now())/1000))}</div></div>
    <div class="next">${figSVG(st.id,'mini')}<div><span>Als Nächstes, Satz ${st.s+1} von ${PL.solo?PL.steps.length:SETS}</span><strong>${vname(st.id)}</strong><span>${tgtStep(st)}</span></div></div>
-   <ul class="cues">${e.cues.map(c=>`<li>${c}</li>`).join('')}</ul>
+   <ul class="cues">${cuesOf(st.id).map(c=>`<li>${c}</li>`).join('')}</ul>
    <div class="spacer"></div><div class="pbtns"><button class="btn ghost" data-act="p-plus">+15 s</button><button class="btn" data-act="p-next">Weiter</button></div>`;
  }else{
   const c=lvx(st.id).slice();if(st.n)c[1]=st.n;
@@ -1043,7 +1046,7 @@ function renderPlayer(){
   const btns=e.t==='h'
    ?`<div class="pbtns"><button class="btn ghost" data-act="p-pause">${PL.paused?'Weiter':'Pause'}</button><button class="btn" data-act="p-next">Fertig</button></div>`
    :`<button class="btn" data-act="p-next" style="margin-top:0">Satz erledigt</button>`;
-  body=stageHTML(st.id,st,over)+chips(e)+`<ul class="cues">${e.cues.map(c=>`<li>${c}</li>`).join('')}</ul>${focusHTML(e)}<div class="spacer"></div><div class="stick">${btns}</div>`;
+  body=stageHTML(st.id,st,over)+chips(e)+`<ul class="cues">${cuesOf(st.id).map(c=>`<li>${c}</li>`).join('')}</ul>${focusHTML(e)}<div class="spacer"></div><div class="stick">${btns}</div>`;
  }
  el.innerHTML=`<div class="pl">${head}${body}</div>`+(PL.confirm?`<div class="dlg"><div><h3>Workout beenden?</h3><p class="sub">Dein Fortschritt in diesem Workout wird nicht gespeichert.</p><div class="pbtns"><button class="btn ghost" data-act="p-no">Weitermachen</button><button class="btn" data-act="p-yes">Beenden</button></div></div></div>`:'');
  hydrate(el)}
