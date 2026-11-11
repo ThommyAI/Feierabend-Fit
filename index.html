@@ -713,8 +713,8 @@ const PHOTOS={"pushup": ["data:image/webp;base64,UklGRi56AABXRUJQVlA4ICJ6AABwKQO
 const VIDEOS={pushup:'img/pushup.mp4',skull:'img/skull.mp4'};
 function figSVG(id,cls,still){const p=PHOTOS[id],e=EX[id],alt='Übung: '+e.n;
  if(VIDEOS[id]&&!still&&!REDUCED)return `<div class="pic ${cls||''}" role="img" aria-label="${alt}"><div class="zz"><video src="${VIDEOS[id]}" autoplay muted loop playsinline preload="auto"></video></div></div>`;
- /* ohne Foto: erstes Videobild als Standbild */
- if(VIDEOS[id]&&!p)return `<div class="pic ${cls||''}" role="img" aria-label="${alt}"><div class="zz" style="animation:none"><video src="${VIDEOS[id]}#t=0.1" muted playsinline preload="metadata"></video></div></div>`;
+ /* Standbild (Übersicht, reduzierte Bewegung): erstes Videobild statt Foto */
+ if(VIDEOS[id])return `<div class="pic ${cls||''}" role="img" aria-label="${alt}"><div class="zz" style="animation:none"><video src="${VIDEOS[id]}#t=0.1" muted playsinline preload="auto"></video></div></div>`;
  if(!p)return figDraw(id,cls,still);
  const d=((e.per||3.4)*1.25).toFixed(2);
  if(p.length<2||e.t==='h'||still)return `<div class="pic ${cls||''}" role="img" aria-label="${alt}"><div class="zz" style="animation:none"><img src="${p[0]}" alt=""></div></div>`;
