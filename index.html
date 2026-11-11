@@ -1017,6 +1017,7 @@ function renderPlayer(){
  }else if(PL.phase==='rest'){
   body=`<div class="rest"><div class="lbl2">Pause</div><div class="big" id="tm">${Math.max(0,Math.ceil((PL.end-Date.now())/1000))}</div></div>
    <div class="next">${figSVG(st.id,'mini')}<div><span>Als Nächstes, Satz ${st.s+1} von ${PL.solo?PL.steps.length:SETS}</span><strong>${vname(st.id)}</strong><span>${tgtStep(st)}</span></div></div>
+   <ul class="cues">${e.cues.map(c=>`<li>${c}</li>`).join('')}</ul>
    <div class="spacer"></div><div class="pbtns"><button class="btn ghost" data-act="p-plus">+15 s</button><button class="btn" data-act="p-next">Weiter</button></div>`;
  }else{
   const c=lvx(st.id).slice();if(st.n)c[1]=st.n;
