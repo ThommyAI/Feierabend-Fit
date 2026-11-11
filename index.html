@@ -176,6 +176,7 @@ table.mc td.cnt.bad{color:var(--danger)}
 .xc .tg{display:flex;flex-wrap:wrap;gap:4px;padding:0 4px 4px}
 .tag{font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:5px;background:var(--surface2);color:var(--muted)}
 .tag.g{background:var(--fg);color:var(--bg)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
 .xc .btn{margin:2px 4px 4px;padding:9px 10px;font-size:15px}
 /* Sheet */
 #sheet{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:30;display:flex;align-items:flex-end;justify-content:center}
@@ -985,13 +986,14 @@ function renderPlayer(){
  const st=PL.steps[Math.min(PL.i,PL.steps.length-1)],e=EX[st.id],wk=PL.solo?{t:EX[PL.steps[0].id].n}:W[PL.w],per=PL.solo?1:SETS,n=PL.steps.length/per;
  const remS=(PL.steps.length-PL.i)*52;
  const segs=Array.from({length:n},(_,ei)=>`<i><b style="width:${Math.max(0,Math.min(1,(PL.i-ei*per)/per))*100}%"></b></i>`).join('');
- const head=`<div class="ph"><button data-act="p-exit" aria-label="Beenden">✕</button><div><strong>${wk.t}</strong><span>${PL.phase==='done'?'Fertig':'Noch etwa '+Math.max(1,Math.round(remS/60))+' Min'}</span></div></div><div class="segs">${segs}</div>`;
+ const fbNeed=PL.phase==='done'&&!PL.solo&&!PL.fb;
+ const head=`<div class="ph"><button data-act="p-exit" aria-label="Beenden"${fbNeed?' disabled style="visibility:hidden"':''}>✕</button><div><strong>${wk.t}</strong><span>${PL.phase==='done'?'Fertig':'Noch etwa '+Math.max(1,Math.round(remS/60))+' Min'}</span></div></div><div class="segs">${segs}</div>`;
  let body='';
  if(PL.phase==='done'){
   const s=PL.dur;
   body=`<div class="done-h">Geschafft.</div><p class="sub">${PL.solo?'Die Übung ist gespeichert. Gut gemacht.':wk.t+' ist gespeichert. Jetzt unter die Dusche.'}</p>
    <div class="stats"><div class="stat"><b>${Math.floor(s/60)}:${pad(s%60)}</b><span>Minuten</span></div><div class="stat"><b>${PL.steps.length}</b><span>Sätze</span></div></div>
-   ${PL.solo?'':`<div class="card" style="margin-top:4px"><strong>Wie war das Workout?</strong><div class="seg" style="margin-top:10px">${[['easy','Zu leicht'],['ok','Genau richtig'],['hard','Zu schwer']].map(([k,l])=>`<button class="${PL.fb===k?'on':''}" data-act="fb" data-v="${k}">${l}</button>`).join('')}</div><p class="sub" style="margin:0">${PL.fb?'Danke, gespeichert. ':''}Nach zwei gleichen Bewertungen schlägt die App ein neues Level vor.</p></div>`}${chipsM(PL.solo?EX[PL.steps[0].id].p:wMu(PL.w))}<div class="spacer"></div><button class="btn" data-act="p-close">Zurück zur Übersicht</button>`;
+   ${PL.solo?'':`<div class="card" style="margin-top:4px"><strong>Wie war das Workout?</strong><div class="seg" style="margin-top:10px">${[['easy','Zu leicht'],['ok','Genau richtig'],['hard','Zu schwer']].map(([k,l])=>`<button class="${PL.fb===k?'on':''}" data-act="fb" data-v="${k}">${l}</button>`).join('')}</div><p class="sub" style="margin:0">${PL.fb?'Danke, gespeichert. ':'Bitte wähle eine Bewertung, um fortzufahren. '}Nach zwei gleichen Bewertungen schlägt die App ein neues Level vor.</p></div>`}${chipsM(PL.solo?EX[PL.steps[0].id].p:wMu(PL.w))}<div class="spacer"></div><button class="btn" data-act="p-close"${fbNeed?' disabled':''}>Zurück zur Übersicht</button>`;
  }else if(PL.phase==='ready'){
   const left=Math.max(0,Math.ceil((PL.end-Date.now())/1000));
   body=stageHTML(st.id,st,`<div class="reps" style="font-size:36px">Gleich geht's los</div><div class="nm">${vname(st.id)}</div><div class="tmr" id="tm">${left}</div>`)+chips(e)+`<div class="spacer"></div><div class="stick"><button class="btn ghost" data-act="p-next">Sofort starten</button></div>`;
@@ -1265,9 +1267,9 @@ document.addEventListener('click',e=>{
   case 'p-next':if(PL){if(PL.phase==='ready'||PL.phase==='rest')beginWork();else if(PL.phase==='work')finishSet()}break;
   case 'p-plus':if(PL&&PL.phase==='rest'){PL.end+=15000}break;
   case 'p-pause':if(PL){if(PL.paused){PL.end=Date.now()+PL.left;PL.paused=false}else{PL.left=PL.end-Date.now();PL.paused=true}renderPlayer()}break;
-  case 'p-exit':if(PL){PL.confirm=true;renderPlayer()}break;
+  case 'p-exit':if(PL&&!(PL.phase==='done'&&!PL.solo&&!PL.fb)){PL.confirm=true;renderPlayer()}break;
   case 'p-no':if(PL){PL.confirm=false;renderPlayer()}break;
-  case 'p-yes':case 'p-close':closePlayer();break;
+  case 'p-yes':case 'p-close':if(PL&&PL.phase==='done'&&!PL.solo&&!PL.fb)break;closePlayer();break;
  }
 });
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='q'){COL.q=e.target.value;const g=$('#grid');if(g){g.innerHTML=gridHTML();hydrate(g)}}});
