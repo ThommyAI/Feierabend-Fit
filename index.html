@@ -187,6 +187,11 @@ table.mc td.cnt.bad{color:var(--danger)}
 .lvl{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14.5px}
 .lvl:first-of-type{border-top:0}
 .lvl span{color:var(--muted);white-space:nowrap}
+.lvb{appearance:none;width:100%;text-align:left;background:var(--surface);color:var(--fg);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:8px;font:inherit;font-size:14.5px;cursor:pointer;align-items:center}
+.lvb.on{border-color:var(--accent);background:var(--soft)}
+.lvb.on span{color:var(--softfg)}
+.lvb em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:2px}
+.exrow[data-act]{cursor:pointer}
 .opt{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:8px;font-size:15.5px;font-weight:600;cursor:pointer}
 .opt span{color:var(--muted);font-weight:400;font-size:14px}
 /* Foto-Darstellung mit weicher Überblendung */
@@ -322,8 +327,8 @@ const todayIdx=()=>(new Date().getDay()+6)%7;
 function dateOfWeekday(i,weeksBack){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-todayIdx()+i-7*(weeksBack||0));return d}
 
 /* ================= Zustand (Speicherung im Browser) ================= */
-let S={level:1,days:[1,1,1,0,1,1,0],sound:1,log:[],custom:{},gear:{home:1,bar:0,db:0,kb:0,band:0},theme:'dark',profile:null,planW:null,solo:[]};
-try{const r=localStorage.getItem('feierabendfit');if(r){const o=JSON.parse(r);S=Object.assign(S,o);S.gear=Object.assign({home:1,bar:0,db:0,kb:0,band:0},o.gear||{});S.custom=o.custom||{};S.solo=o.solo||[]}}catch(e){}
+let S={level:1,days:[1,1,1,0,1,1,0],sound:1,log:[],custom:{},exLv:{},gear:{home:1,bar:0,db:0,kb:0,band:0},theme:'dark',profile:null,planW:null,solo:[]};
+try{const r=localStorage.getItem('feierabendfit');if(r){const o=JSON.parse(r);S=Object.assign(S,o);S.gear=Object.assign({home:1,bar:0,db:0,kb:0,band:0},o.gear||{});S.custom=o.custom||{};S.exLv=o.exLv||{};S.solo=o.solo||[]}}catch(e){}
 function save(){try{localStorage.setItem('feierabendfit',JSON.stringify(S))}catch(e){}}
 function applyTheme(){const r=document.documentElement;if(S.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',S.theme)}
 applyTheme();
@@ -585,7 +590,9 @@ const wMu=w=>{const set=new Set(exList(w).flatMap(id=>EX[id].p));return CATS.fil
 function plan(){const m={};let k=0;S.days.forEach((v,i)=>{if(v&&k<W.length){m[i]=k;k++}});return m}
 function isDone(dk,w){return S.log.some(l=>l.d===dk&&(w===undefined||l.w===w))}
 function lvxFor(id,li){const e=EX[id],Lv=LEVELS[li],b=e.lv[Lv.v];let c=b[1]*Lv.rf;c=e.t==='h'?Math.max(10,Math.round(c/5)*5):Math.max(3,Math.round(c));return [b[0],c,b[2]]}
-const lvx=id=>lvxFor(id,S.level);
+/* Eigenes Level pro Übung (S.exLv), sonst das allgemeine Level */
+const exLevel=id=>S.exLv[id]!==undefined?S.exLv[id]:S.level;
+const lvx=id=>lvxFor(id,exLevel(id));
 const vname=id=>lvx(id)[0];
 function tgt(id){const [,c,per]=lvx(id);return EX[id].t==='h'?c+' Sek.':c+' Wdh.'+(per?' pro Seite':'')}
 function nextUndone(){const pm=plan(),assigned=Object.values(pm);const week=DAYS.map((_,i)=>key(dateOfWeekday(i)));
@@ -735,7 +742,7 @@ requestAnimationFrame(frame);
 /* ================= Bausteine ================= */
 const chips=(e)=>`<div class="chips">${e.p.map(m=>`<span class="chip p">${m}</span>`).join('')}${e.s.filter(x=>!e.p.includes(x)).map(m=>`<span class="chip">${m}</span>`).join('')}</div>`;
 const chipsM=arr=>`<div class="chips">${arr.map(m=>`<span class="chip p">${m}</span>`).join('')}</div>`;
-function wList(w,edit){return exList(w).map((id,s)=>`<div class="exrow">${figSVG(id,'mini')}<div class="tx"><strong>${vname(id)}</strong><span>${SETS} Sätze, ${tgt(id)}</span></div>${edit?`<button class="swap" data-act="swap" data-w="${w}" data-s="${s}" aria-label="Übung tauschen">Tauschen</button>`:''}</div>`).join('')}
+function wList(w,edit){return exList(w).map((id,s)=>`<div class="exrow"${edit?` data-act="info" data-id="${id}" role="button" tabindex="0"`:''}>${figSVG(id,'mini')}<div class="tx"><strong>${vname(id)}</strong><span>${SETS} Sätze, ${tgt(id)}${S.exLv[id]!==undefined?`, Level ${LEVELS[S.exLv[id]].n}`:''}</span></div>${edit?`<button class="swap" data-act="swap" data-w="${w}" data-s="${s}" aria-label="Übung tauschen">Tauschen</button>`:''}</div>`).join('')}
 function weekStrip(){const pm=plan(),ti=todayIdx();
  return `<div class="week">${DAYS.map((d,i)=>{const p=pm[i]!==undefined,done=isDone(key(dateOfWeekday(i)));
   return `<div class="wd ${done?'done':''} ${!p&&!done?'rest':''} ${i===ti?'today':''}"><b>${done?'✓':p?pm[i]+1:'–'}</b>${d}</div>`}).join('')}</div>`}
@@ -892,8 +899,10 @@ function renderSheet(){
    <div class="figbox" style="margin:10px 0">${figSVG(id)}</div>
    ${e.g.length?`<div class="chips" style="margin-top:0">${gearTags(e)}</div>`:'<div class="chips" style="margin-top:0"><span class="tag">Ohne Geräte</span></div>'}
    <ul class="cues">${e.cues.map(c=>`<li>${c}</li>`).join('')}</ul>${focusHTML(e)}
-   <h2 class="h2" style="font-size:22px;margin-top:16px">Je nach Fitnesslevel</h2>
-   ${LEVELS.map((L_,i)=>{const c=lvxFor(id,i);return `<div class="lvl" style="${S.level===i?'font-weight:700':''}"><div><strong>${L_.n}:</strong> ${c[0]}</div><span>${e.t==='h'?c[1]+' Sek.':c[1]+' Wdh.'+(c[2]?' pro Seite':'')}</span></div>`}).join('')}
+   <h2 class="h2" style="font-size:22px;margin-top:16px">Level dieser Übung</h2>
+   <p class="sub" style="margin:0 0 10px">${S.exLv[id]!==undefined?'Eigenes Level für diese Übung, gilt in allen Workouts.':'Richtet sich nach deinem Level. Tippe ein anderes an, um nur diese Übung anzupassen.'}</p>
+   ${LEVELS.map((L_,i)=>{const c=lvxFor(id,i);return `<button class="lvl lvb${exLevel(id)===i?' on':''}" data-act="exlv" data-v="${i}" aria-pressed="${exLevel(id)===i}"><div><strong>${L_.n}:</strong> ${c[0]}${S.level===i?'<em>Dein Level</em>':''}</div><span>${e.t==='h'?c[1]+' Sek.':c[1]+' Wdh.'+(c[2]?' pro Seite':'')}</span></button>`}).join('')}
+   ${S.exLv[id]!==undefined?`<button class="btn ghost" data-act="exlv" data-v="auto" style="margin-top:4px">Wieder nach meinem Level richten</button>`:''}
    ${SWAP?`<button class="btn" data-act="put" data-id="${id}">Hier einsetzen</button><button class="btn ghost" data-act="solo-open">Trainieren</button>`:`<button class="btn" data-act="solo-open">Trainieren</button><button class="btn ghost" data-act="sheet-pick">In Workout einsetzen</button>`}
    <a class="btn ghost" href="${ytLink(id)}" target="_blank" rel="noopener noreferrer">Video zur Übung suchen</a>`;
  }else if(SHEET.step==='solo'){
@@ -1257,6 +1266,10 @@ document.addEventListener('click',e=>{
   case 'cat':COL.cat=d.c;render();break;
   case 'gear':S.gear[d.g]=S.gear[d.g]?0:1;save();render();break;
   case 'info':SHEET={id:d.id,step:'info'};renderSheet();break;
+  case 'exlv':{const id=SHEET.id;if(d.v==='auto'||+d.v===S.level)delete S.exLv[id];else S.exLv[id]=+d.v;save();
+   const sh=$('#sheet .sh'),top=sh?sh.scrollTop:0,open=[...document.querySelectorAll('details.plan')].map(x=>x.open);
+   renderSheet();render();document.querySelectorAll('details.plan').forEach((x,i)=>{if(open[i])x.open=true});
+   const sh2=$('#sheet .sh');if(sh2)sh2.scrollTop=top;toast(S.exLv[id]!==undefined?'Level für diese Übung: '+LEVELS[S.exLv[id]].n:'Übung richtet sich wieder nach deinem Level');break}
   case 'close-sheet':SHEET=null;renderSheet();break;
   case 'sheet-pick':SHEET.step='w';renderSheet();break;
   case 'sheet-back':SHEET.step='info';renderSheet();break;
