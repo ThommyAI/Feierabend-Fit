@@ -770,7 +770,7 @@ function vPlan(){
  out+=DAYS_LONG.map((dn,i)=>{const w=pm[i];
   if(w===undefined)return `<div class="prow"><b>${DAYS[i]}</b><div><strong>Ruhetag</strong><span>Erholung, hier wachsen die Muskeln</span></div></div>`;
   const done=isDone(key(dateOfWeekday(i)),w);
-  return `<details class="card plan"><summary><b class="dn">${DAYS[i]}</b><div><strong>${W[w].t}${S.custom[w]?' (angepasst)':''}</strong><span>${wMu(w).join(', ')}</span></div>${done?'<em class="ok">✓</em>':''}</summary><div class="body">${wList(w,true)}${S.custom[w]?`<button class="btn ghost" data-act="restore" data-w="${w}">Standard-Übungen wiederherstellen</button>`:''}<button class="btn" data-act="start" data-w="${w}">Workout starten</button></div></details>`}).join('');
+  return `<details class="card plan"><summary><b class="dn">${DAYS[i]}</b><div><strong>${W[w].t}${S.custom[w]?' (angepasst)':''}</strong><span>${wMu(w).join(', ')}</span></div>${done?'<em class="ok">✓</em>':''}</summary><div class="body">${wList(w,true)}<button class="btn ghost" data-act="remix" data-w="${w}">Neu zusammenstellen</button>${S.custom[w]?`<button class="btn ghost" data-act="restore" data-w="${w}">Standard-Übungen wiederherstellen</button>`:''}<button class="btn" data-act="start" data-w="${w}">Workout starten</button></div></details>`}).join('');
  const idxs=W.map((_,k)=>k);
  const heads=idxs.map(k=>{const i=Object.keys(pm).find(x=>pm[x]===k);return i!==undefined?DAYS[i]:'T'+(k+1)});
  const want=(S.profile&&S.profile.freq)||2,tg=(S.profile&&S.profile.muscles&&S.profile.muscles.length)?S.profile.muscles:CATS;
@@ -935,6 +935,23 @@ function putEx(w,s,id){
  cur[s]=id;S.custom[w]=cur;
  if(JSON.stringify(cur)===JSON.stringify(W[w].ex))delete S.custom[w];
  save();toast('Übung eingesetzt');return true}
+
+/* Ganzen Tag neu würfeln: jede Übung wird durch eine andere für denselben Hauptmuskel ersetzt,
+   passend zu Level und Geräten; Übungen aus den anderen Tagen werden möglichst vermieden */
+function remixDay(w){
+ const cur=exList(w),target=LT[S.level],other=new Set(),out=[];
+ W.forEach((x,i)=>{if(i!==w)exList(i).forEach(id=>other.add(id))});
+ const ok=id=>EX[id].g.every(g=>S.gear[g])&&!cur.includes(id)&&!out.includes(id);
+ cur.forEach(id=>{const m=EX[id].p[0];
+  let cand=Object.keys(EX).filter(x=>EX[x].p[0]===m&&ok(x));
+  if(!cand.length)cand=Object.keys(EX).filter(x=>EX[x].p.includes(m)&&ok(x));
+  const near=cand.filter(x=>Math.abs(EX[x].d-target)<=1.6);if(near.length)cand=near;
+  const fresh=cand.filter(x=>!other.has(x));if(fresh.length)cand=fresh;
+  out.push(cand.length?cand[Math.floor(Math.random()*cand.length)]:id)});
+ if(out.every((id,i)=>id===cur[i])){toast('Keine anderen passenden Übungen verfügbar');return false}
+ S.custom[w]=out;
+ if(JSON.stringify(out)===JSON.stringify(W[w].ex))delete S.custom[w];
+ save();toast('Neues Workout zusammengestellt');return true}
 
 /* ================= Workout-Player ================= */
 let PL=null,AC=null,WL=null;
@@ -1251,6 +1268,7 @@ document.addEventListener('click',e=>{
   case 'swap':{const cur=EX[exList(+d.w)[+d.s]];SWAP={w:+d.w,s:+d.s,from:TAB};COL.cat=cur.p[0];COL.q='';TAB='ueb';render();window.scrollTo(0,0);break}
   case 'cancel-swap':TAB=SWAP.from||'plan';SWAP=null;render();break;
   case 'put':{if(SWAP&&putEx(SWAP.w,SWAP.s,d.id)){TAB=SWAP.from||'plan';SWAP=null;SHEET=null;renderSheet();render();window.scrollTo(0,0)}break}
+  case 'remix':if(remixDay(+d.w)){render();const b=document.querySelector(`[data-act="remix"][data-w="${d.w}"]`);if(b)b.closest('details').open=true}break;
   case 'restore':delete S.custom[+d.w];save();toast('Standard wiederhergestellt');render();break;
   case 'ob-open':obOpen();break;
   case 'ob-set':OB[d.k]=['level','days','minutes','freq'].includes(d.k)?+d.v:d.v;obRender();break;
