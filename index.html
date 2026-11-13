@@ -221,6 +221,9 @@ table.mc td.cnt.bad{color:var(--danger)}
 .obacts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .obacts span{font-weight:700;font-size:13.5px}
 .obacts .ob-opt{font-size:15px;padding:11px 12px}
+.obtest{display:block;width:100%;text-align:left;background:var(--soft);color:var(--softfg);border:1.5px solid var(--accent);border-radius:12px;padding:13px 14px;margin:0 0 12px;font:inherit;cursor:pointer}
+.obtest strong{display:block;font-size:16px}
+.obtest small{display:block;font-size:13.5px;margin-top:3px;opacity:.9}
 .obok{background:var(--soft);color:var(--softfg);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14.5px;font-weight:600}
 .bodybox{background:var(--studio);border-radius:14px;padding:8px;margin:8px 0}
 .bodybox svg{width:100%;display:block;max-height:340px}
@@ -1256,7 +1259,7 @@ function obRender(){
  else if(st===1){
   b=`<h1 class="obh">Dein Ziel</h1><p class="sub">Wähle, was dir am wichtigsten ist.</p><div class="opts">${Object.keys(GOALS).map(k=>obOpt(OB.goal===k,'ob-set',`data-k="goal" data-v="${k}"`,GOALS[k].n,GOALS[k].txt)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
  else if(st===2){
-  b=`<h1 class="obh">Dein Level</h1><p class="sub">Wähle ehrlich. Das Level passt sich später an: Im Reiter „Fortschritt“ gibt es einen Level-Test, und nach jedem Training sagst du, ob es zu leicht oder zu schwer war.</p><button class="btn ghost" data-act="test-open" style="margin:0 0 12px">${TEST&&TEST.open?'Level-Test schließen':'Unsicher? Level-Test machen'}</button>${TEST&&TEST.open?`<div class="card">${testHTML()}</div>`:''}<div class="opts">${LEVELS.map((l,i)=>obOpt(OB.level===i,'ob-set',`data-k="level" data-v="${i}"`,l.n,l.txt)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
+  b=`<h1 class="obh">Dein Level</h1><p class="sub">Wähle ehrlich. Das Level passt sich später an: Im Reiter „Fortschritt“ gibt es einen Level-Test, und nach jedem Training sagst du, ob es zu leicht oder zu schwer war.</p><button class="obtest" data-act="test-open">${TEST&&TEST.open?'<strong>Level-Test schließen</strong>':'<strong>Unsicher? Level-Test machen</strong><small>3 kurze Übungen, dann schlägt dir die App ein Level vor.</small>'}</button>${TEST&&TEST.open?`<div class="card">${testHTML()}</div>`:''}<div class="opts">${LEVELS.map((l,i)=>obOpt(OB.level===i,'ob-set',`data-k="level" data-v="${i}"`,l.n,l.txt)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
  else if(st===3){
   b=`<h1 class="obh">Deine Geräte</h1><p class="sub">Ohne Geräte geht immer. Mit mehr Geräten gibt es mehr Übungen.</p><div class="opts">${GEAR.map(([k,l])=>obOpt(OB.gear[k],'ob-gear',`data-g="${k}"`,(OB.gear[k]?'✓ ':'')+l)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
  else if(st===4){
