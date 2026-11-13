@@ -218,6 +218,9 @@ table.mc td.cnt.bad{color:var(--danger)}
 .ob-opt.on{background:var(--accent);color:var(--onaccent);border-color:var(--accent)}
 .ob-opt small{display:block;font-weight:400;font-size:13.5px;opacity:.85;margin-top:3px;line-height:1.35}
 .obwarn{background:rgba(217,138,0,.14);border:1.5px solid #d98a00;border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14.5px;line-height:1.45}
+.obacts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.obacts span{font-weight:700;font-size:13.5px}
+.obacts .ob-opt{font-size:15px;padding:11px 12px}
 .obok{background:var(--soft);color:var(--softfg);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14.5px;font-weight:600}
 .bodybox{background:var(--studio);border-radius:14px;padding:8px;margin:8px 0}
 .bodybox svg{width:100%;display:block;max-height:340px}
@@ -862,14 +865,17 @@ function levelCard(){const Lv=LEVELS[S.level];
   <div class="lv5">${LEVELS.map((l,i)=>`<button class="${S.level===i?'on':''}" data-act="level" data-v="${i}" aria-label="${l.n}">${i+1}</button>`).join('')}</div>
   <p class="sub" style="margin:0">Alle Workouts passen sich automatisch an: Übungsvariante ${['leichter','im Standard','schwerer'][Lv.v]}, Wiederholungen ${Math.round(Lv.rf*100)} %, Pause ${Lv.r1} bis ${Lv.r2} Sekunden.</p>${sugBanner()?'<div style="margin-top:12px">'+sugBanner()+'</div>':''}`;
  h+=`<button class="btn ghost" data-act="test-open">${TEST&&TEST.open?'Level-Test schließen':'Level-Test starten'}</button>`;
- if(TEST&&TEST.open){const v=TEST.vals||[];
-  h+=`<p class="sub" style="margin:14px 0 8px">Mach jeden Test frisch und sauber, mit ein paar Minuten Pause dazwischen. Trag dann deine Ergebnisse ein.</p>
+ return h+testHTML()+'</div>'}
+/* Level-Test: im Reiter Fortschritt und in der Einrichtung (Schritt „Dein Level“) */
+function testHTML(){if(!(TEST&&TEST.open))return '';const v=TEST.vals||[];
+ let h=`<p class="sub" style="margin:14px 0 8px">Mach jeden Test frisch und sauber, mit ein paar Minuten Pause dazwischen. Trag dann deine Ergebnisse ein.</p>
   <div class="tf"><label for="t1">Liegestütze am Stück (normal, sauber)</label><input id="t1" type="number" inputmode="numeric" min="0" value="${v[0]??''}"></div>
   <div class="tf"><label for="t2">Kniebeugen in 60 Sekunden</label><input id="t2" type="number" inputmode="numeric" min="0" value="${v[1]??''}"></div>
   <div class="tf"><label for="t3">Unterarmstütz in Sekunden</label><input id="t3" type="number" inputmode="numeric" min="0" value="${v[2]??''}"></div>
   <button class="btn" data-act="test-run">Auswerten</button>`;
-  if(TEST.res!==undefined)h+=`<p class="sub" style="margin:14px 0 0"><strong style="color:var(--fg)">Vorschlag: ${LEVELS[TEST.res].n} (Level ${TEST.res+1})</strong><br>Das ist eine grobe Schätzung anhand üblicher Richtwerte. Ich kenne weder dein Gewicht noch deine Vorgeschichte oder Verletzungen. Nach den Workouts kannst du bewerten, ob es zu leicht oder zu schwer war, dann schlägt die App Anpassungen vor.</p><button class="btn" data-act="test-take">Level ${TEST.res+1} übernehmen</button>`}
- return h+'</div>'}
+ if(TEST.res!==undefined)h+=`<p class="sub" style="margin:14px 0 0"><strong style="color:var(--fg)">Vorschlag: ${LEVELS[TEST.res].n} (Level ${TEST.res+1})</strong><br>Das ist eine grobe Schätzung anhand üblicher Richtwerte. Ich kenne weder dein Gewicht noch deine Vorgeschichte oder Verletzungen. Nach den Workouts kannst du bewerten, ob es zu leicht oder zu schwer war, dann schlägt die App Anpassungen vor.</p><button class="btn" data-act="test-take">Level ${TEST.res+1} übernehmen</button>`;
+ return h}
+const inOB=()=>OB&&!$('#ob').hidden;
 function vMehr(){
  const n=S.days.filter(Boolean).length;
  return `<div class="top"><div class="brand">Mehr<i>Einstellungen</i></div></div>
@@ -1071,22 +1077,26 @@ function checkPlan(p){
  const msgs=[],n=exN(p.minutes),D=p.days,M=p.muscles.length,g=GOALS[p.goal||'muskel'];
  if(!M)return {msgs:[{x:'Wähle mindestens eine Muskelgruppe.'}],f:1,avail:0,need:0,per:0,ok:false};
  let f=p.freq;
- if(f>D){msgs.push({x:`Du willst jeden Muskel ${f}× pro Woche trainieren, hast aber nur ${D} Einheiten. Mehr als ${D}× pro Woche geht nicht, ich plane mit ${D}×.`});f=D}
+ if(f>D){msgs.push({x:`Du willst jeden Muskel ${f}× pro Woche trainieren, hast aber nur ${D} Einheiten. Mehr als ${D}× pro Woche geht nicht, ich plane mit ${D}×.`,acts:[{l:`${f} Einheiten pro Woche`,k:'days',v:f},{l:`Jeden Muskel ${D}× pro Woche`,k:'freq',v:D}]});f=D}
  const per=Math.max(g.sets,f*3),need=M*per,avail=D*n*3;
  if(avail<need){
   const minDays=Math.ceil(need/(n*3));
   const exNeeded=Math.ceil(Math.ceil(need/D)/3);
   const minMin=MINOPTS.find(m=>exN(m)>=exNeeded);
   const maxM=Math.floor(avail/per);
-  const opts=[];
-  if(minDays<=6&&minDays>D)opts.push(`mindestens ${minDays} Einheiten pro Woche`);
-  if(minMin&&minMin>p.minutes)opts.push(`${minMin} Minuten pro Einheit bei ${D} Einheiten`);
-  if(maxM>=1)opts.push(`höchstens ${maxM} Muskelgruppe${maxM>1?'n':''} bei ${D} Einheiten à ${p.minutes} Minuten`);
-  msgs.push({x:`Das passt nicht zusammen: Mit ${D} Einheiten à ${p.minutes} Minuten schaffst du etwa ${avail} Sätze pro Woche. Für „${g.n}“ an ${M} Muskelgruppe${M>1?'n':''} brauchst du etwa ${need} (${per} pro Muskel). ${opts.length?'Das würde passen: '+opts.join(', oder ')+'.':'Wähle weniger Muskelgruppen oder mehr Zeit.'}`})
+  const opts=[],acts=[];
+  if(minDays<=6&&minDays>D){opts.push(`mindestens ${minDays} Einheiten pro Woche`);acts.push({l:`${minDays} Einheiten pro Woche`,k:'days',v:minDays})}
+  if(minMin&&minMin>p.minutes){opts.push(`${minMin} Minuten pro Einheit bei ${D} Einheiten`);acts.push({l:`${minMin} Minuten pro Einheit`,k:'minutes',v:minMin})}
+  if(maxM>=1){opts.push(`höchstens ${maxM} Muskelgruppe${maxM>1?'n':''} bei ${D} Einheiten à ${p.minutes} Minuten`);acts.push({l:`Höchstens ${maxM} Muskelgruppe${maxM>1?'n':''} wählen`,k:'muscles',v:maxM})}
+  /* andere Ziele mit weniger Sätzen, die mit der Auswahl passen */
+  Object.keys(GOALS).forEach(k=>{if(k!==(p.goal||'muskel')&&M*Math.max(GOALS[k].sets,f*3)<=avail)acts.push({l:`Ziel „${GOALS[k].n}“`,k:'goal',v:k})});
+  msgs.push({x:`Das passt nicht zusammen: Mit ${D} Einheiten à ${p.minutes} Minuten schaffst du etwa ${avail} Sätze pro Woche. Für „${g.n}“ an ${M} Muskelgruppe${M>1?'n':''} brauchst du etwa ${need} (${per} pro Muskel). ${opts.length?'Das würde passen: '+opts.join(', oder ')+'.':'Wähle weniger Muskelgruppen oder mehr Zeit.'}`,acts})
  }
  return {msgs,f,per,need,avail,ok:msgs.length===0}}
 function warnHTML(c){
- if(c.msgs.length)return `<div class="obwarn"><strong>Hinweis</strong><br>${c.msgs.map(m=>m.x).join('<br><br>')}</div>`;
+ if(c.msgs.length){const acts=c.msgs.flatMap(m=>m.acts||[]);
+  const go=OB&&OB.step===5?`<button class="ob-opt" data-act="ob-next">So lassen, trotzdem weiter</button>`:'';
+  return `<div class="obwarn"><strong>Hinweis</strong><br>${c.msgs.map(m=>m.x).join('<br><br>')}${acts.length||go?`<div class="obacts"><span>Schnellauswahl:</span>${acts.map(a=>`<button class="ob-opt" data-act="ob-fix" data-k="${a.k}" data-v="${a.v}">${a.l}</button>`).join('')}${go}</div>`:''}</div>`}
  return `<div class="obok">Das passt zusammen: etwa ${c.avail} Sätze pro Woche, für dein Ziel werden etwa ${c.need} gebraucht.</div>`}
 
 /* --- Automatischer Wochenplan --- */
@@ -1173,8 +1183,8 @@ function obPaintBody(){
 /* --- Fragen --- */
 function obDefaults(){const p=(S.profile&&!S.profile.skipped)?S.profile:{};
  return {step:0,sex:p.sex||null,age:p.age||'',goal:p.goal||null,level:S.level,gear:Object.assign({},S.gear),days:p.days||5,minutes:Math.max(15,p.minutes||15),muscles:(p.muscles&&p.muscles.length)?p.muscles.slice():CATS.slice(),freq:p.freq||2}}
-function obOpen(){OB=obDefaults();obRender()}
-function obClose(){OB=null;const el=$('#ob');el.hidden=true;el.innerHTML=''}
+function obOpen(){OB=obDefaults();TEST=null;obRender()}
+function obClose(){OB=null;TEST=null;const el=$('#ob');el.hidden=true;el.innerHTML=''}
 const obParams=()=>({goal:OB.goal||'muskel',days:OB.days,minutes:OB.minutes,muscles:OB.muscles,freq:OB.freq});
 function ageHint(){const a=parseInt(OB.age,10);if(isNaN(a))return '';
  if(a<12||a>99)return '<p class="warn">Bitte ein Alter zwischen 12 und 99 eingeben.</p>';
@@ -1204,7 +1214,7 @@ function obRender(){
  else if(st===1){
   b=`<h1 class="obh">Dein Ziel</h1><p class="sub">Wähle, was dir am wichtigsten ist.</p><div class="opts">${Object.keys(GOALS).map(k=>obOpt(OB.goal===k,'ob-set',`data-k="goal" data-v="${k}"`,GOALS[k].n,GOALS[k].txt)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
  else if(st===2){
-  b=`<h1 class="obh">Dein Level</h1><p class="sub">Wähle ehrlich. Das Level passt sich später an: Im Reiter „Fortschritt“ gibt es einen Level-Test, und nach jedem Training sagst du, ob es zu leicht oder zu schwer war.</p><div class="opts">${LEVELS.map((l,i)=>obOpt(OB.level===i,'ob-set',`data-k="level" data-v="${i}"`,l.n,l.txt)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
+  b=`<h1 class="obh">Dein Level</h1><p class="sub">Wähle ehrlich. Das Level passt sich später an: Im Reiter „Fortschritt“ gibt es einen Level-Test, und nach jedem Training sagst du, ob es zu leicht oder zu schwer war.</p><button class="btn ghost" data-act="test-open" style="margin:0 0 12px">${TEST&&TEST.open?'Level-Test schließen':'Unsicher? Level-Test machen'}</button>${TEST&&TEST.open?`<div class="card">${testHTML()}</div>`:''}<div class="opts">${LEVELS.map((l,i)=>obOpt(OB.level===i,'ob-set',`data-k="level" data-v="${i}"`,l.n,l.txt)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
  else if(st===3){
   b=`<h1 class="obh">Deine Geräte</h1><p class="sub">Ohne Geräte geht immer. Mit mehr Geräten gibt es mehr Übungen.</p><div class="opts">${GEAR.map(([k,l])=>obOpt(OB.gear[k],'ob-gear',`data-g="${k}"`,(OB.gear[k]?'✓ ':'')+l)).join('')}</div><div class="spacer"></div>${obNav(true)}`}
  else if(st===4){
@@ -1259,11 +1269,12 @@ document.addEventListener('click',e=>{
   case 'start':startWorkout(+d.w);break;
   case 'level':setLevel(+d.v);render();break;
   case 'lvl-apply':setLevel(S.level+(+d.v));toast('Level angepasst');render();break;
-  case 'test-open':TEST=(TEST&&TEST.open)?null:{open:true};render();break;
-  case 'test-run':{const v=id=>parseInt(($(id)||{}).value,10);const p=v('#t1'),q=v('#t2'),r=v('#t3');
+  case 'test-open':TEST=(TEST&&TEST.open)?null:{open:true};inOB()?obRender():render();break;
+  case 'test-run':{const sc=inOB()?'#ob ':'',v=id=>parseInt(($(sc+id)||{}).value,10);const p=v('#t1'),q=v('#t2'),r=v('#t3');
    if([p,q,r].some(x=>isNaN(x)||x<0)){toast('Bitte alle drei Werte eintragen');break}
-   TEST={open:true,res:scoreTest(p,q,r),vals:[p,q,r]};render();break}
-  case 'test-take':setLevel(TEST.res);TEST=null;toast('Level übernommen');render();break;
+   TEST={open:true,res:scoreTest(p,q,r),vals:[p,q,r]};inOB()?obRender():render();break}
+  case 'test-take':if(inOB()){OB.level=TEST.res;TEST=null;toast('Level übernommen');obRender();break}
+   setLevel(TEST.res);TEST=null;toast('Level übernommen');render();break;
   case 'fb':{const l=S.log[S.log.length-1];if(l&&PL){l.r=d.v;save();PL.fb=d.v;renderPlayer()}break}
   case 'fit':COL.fit=!COL.fit;render();break;
   case 'theme':S.theme=d.v;save();applyTheme();render();break;
@@ -1294,6 +1305,7 @@ document.addEventListener('click',e=>{
   case 'remix':if(remixDay(+d.w)){render();const b=document.querySelector(`[data-act="remix"][data-w="${d.w}"]`);if(b)b.closest('details').open=true}break;
   case 'restore':delete S.custom[+d.w];save();toast('Standard wiederhergestellt');render();break;
   case 'ob-open':obOpen();break;
+  case 'ob-fix':if(d.k==='muscles'){OB.step=5;toast('Wähle höchstens '+d.v+' Muskelgruppen')}else{OB[d.k]=d.k==='goal'?d.v:+d.v;toast('Übernommen')}obRender();break;
   case 'ob-set':OB[d.k]=['level','days','minutes','freq'].includes(d.k)?+d.v:d.v;obRender();break;
   case 'ob-gear':OB.gear[d.g]=OB.gear[d.g]?0:1;obRender();break;
   case 'ob-m':{const i=OB.muscles.indexOf(d.m);if(i>=0)OB.muscles.splice(i,1);else OB.muscles.push(d.m);obPaintBody();$('#obwarn').innerHTML=warnHTML(checkPlan(obParams()));break}
